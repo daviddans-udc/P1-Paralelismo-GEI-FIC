@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[])
 {
-    int i, done = 0, n;
+    int i, done = 0, n, err;
     double PI25DT = 3.141592653589793238462643;
     double pi, h, sum, x;
     //mpi variables
@@ -24,11 +24,11 @@ int main(int argc, char *argv[])
             printf("Enter the number of intervals: (0 quits) \n");
             scanf("%d",&n);
             for(i = 1;i<numprocs;i++){
-                MPI_Send(&n,1,MPI_INT,i,1,MPI_COMM_WORLD);
+                if((err = MPI_Send(&n,1,MPI_INT,i,1,MPI_COMM_WORLD)) != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD,err);
             }
            }
         else{
-            MPI_Recv(&n,1,MPI_INT,0,MPI_ANY_TAG,MPI_COMM_WORLD,NULL);
+            if((err = MPI_Recv(&n,1,MPI_INT,0,MPI_ANY_TAG,MPI_COMM_WORLD,NULL)) != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD,err);
         }
         h   = 1.0 / (double) n;
         sum = 0.0;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
         //recive & send
         if(rank == 0){
             for(i = 0;i<numprocs-1;i++){
-            MPI_Recv(&buff,1,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,NULL);
+            if((err = MPI_Recv(&buff,1,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,NULL)) != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD,err);
             sum += buff; //Sumar pi
             }
             //Calcular e imprimir pi
@@ -52,8 +52,9 @@ int main(int argc, char *argv[])
              printf("pi is approximately %.16f, Error is %.16f\n", pi, fabs(pi - PI25DT));
         }
         else{
-            MPI_Send(&sum,1,MPI_DOUBLE,0,1,MPI_COMM_WORLD);
+            if((err = MPI_Send(&sum,1,MPI_DOUBLE,0,1,MPI_COMM_WORLD)) != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD,err);
         }
     }
     MPI_Finalize(); //mpi finalize
+    return 0;
 }

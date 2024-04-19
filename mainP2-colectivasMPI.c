@@ -45,4 +45,5 @@ int main(int argc, char *argv[])
         }
     }
     MPI_Finalize(); //mpi finalize
+    return 0;
 }

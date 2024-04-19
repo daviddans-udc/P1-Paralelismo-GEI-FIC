@@ -5,7 +5,7 @@
 //Colectiva reduce propia
 int MPI_FlattreeColectiva(void* buff, void* recvbuff, int count,
                         MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm){
-    int rank, numprocs, i;
+    int rank, numprocs, i, err;
     if(op != MPI_SUM) return MPI_ERR_OP; // control de errores
     if(datatype != MPI_DOUBLE){return MPI_ERR_TYPE;}
     
@@ -16,19 +16,19 @@ int MPI_FlattreeColectiva(void* buff, void* recvbuff, int count,
     if(rank == root){
             *(double*)recvbuff = *(double*)buff;
             for(i = 0;i<numprocs-1;i++){
-            MPI_Recv(buff,1,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,comm,NULL);
+            if((err = MPI_Recv(buff,1,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,comm,NULL)) != MPI_SUCCESS) MPI_Abort(comm, err);
             *(double*)recvbuff += *(double*)buff; //Sumar trozos
             }
         }
         else{
-            MPI_Send(buff,1,MPI_DOUBLE,0,1,comm);
+            if((err = MPI_Send(buff,1,MPI_DOUBLE,0,1,comm)) != MPI_SUCCESS) MPI_Abort(comm, err);
         }
     return MPI_SUCCESS;
 }
 
 //Colectiva bcast propia
 int MPI_BinomialBcast(void* buff, int count, MPI_Datatype datatype, int root, MPI_Comm comm){
-    int rank, numprocs, i;
+    int rank, numprocs, i, err;
     if(datatype != MPI_INTEGER) return MPI_ERR_TYPE; //control de error
     
     //obtener size y rank 
@@ -37,11 +37,11 @@ int MPI_BinomialBcast(void* buff, int count, MPI_Datatype datatype, int root, MP
     
     //comunicacion
     if(rank != root){
-        MPI_Recv(buff,count,datatype,MPI_ANY_SOURCE,1,comm,NULL);
+        if((err = MPI_Recv(buff,count,datatype,MPI_ANY_SOURCE,1,comm,NULL)) != MPI_SUCCESS) MPI_Abort(comm,err);
     }
     for(i = 1; rank+i<numprocs; i<<=1){
         if(rank < i){
-            MPI_Send(buff,count,datatype,rank+i,1,comm);
+            if((err = MPI_Send(buff,count,datatype,rank+i,1,comm)) != MPI_SUCCESS) MPI_Abort(comm, err);
         }
     }
     return MPI_SUCCESS;
@@ -90,4 +90,5 @@ int main(int argc, char *argv[])
         }
     }
     MPI_Finalize(); //mpi finalize
+    return 0;
 }
